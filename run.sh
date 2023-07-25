@@ -1,0 +1,1 @@
+python.exe get_idealo_price.py
