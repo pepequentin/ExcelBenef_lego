@@ -1,13 +1,20 @@
+from math import nan
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import re
+from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
+
+def set_cell_color(ws, row, column, color):
+    cell = ws.cell(row=row, column=column)
+    cell.fill = PatternFill(start_color=color, end_color=color, fill_type='solid')
 
 def check_prices(file_path):
     df = pd.read_excel(file_path)
     for index, row in df.iterrows():
-        if index < 2:
-            continue
+
+
         lien = row[1]
         prix_achat = row[5]
 
@@ -28,8 +35,8 @@ def check_prices(file_path):
 
             # Parsing HTML
             soup = BeautifulSoup(html_source_code, "html.parser")
+
             # Trouver la balise contenant le prix
-            # prix_balise = soup.find("oopStage-priceRangePrice")
             html_span = soup.find_all('span', {'class' : 'oopStage-priceRangePrice'})
 
             # Utiliser une expression régulière pour extraire le prix
@@ -47,15 +54,40 @@ def check_prices(file_path):
                         else:
                             pourcentage_benef = ((prix - prix_achat) / 1) * 100
 
-                        print(f"Lien: {lien.strip():<130} Bénéfice: {pourcentage_benef:.2f}%")
-                    else:
-                        print("Prix non trouvé pour le lien", lien)
+                        # Store the values in the DataFrame with '%' symbol
+                        df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f} €"
+                        df.at[index, 'Dénéfice potentiel'] = f"{pourcentage_benef:.2f}%"
+
+    # Save the updated DataFrame to a new Excel file
+    output_file = 'Achat_lego_temp.xlsx'
+    df.to_excel(output_file, index=False)
+
+    # Load the workbook to apply color formatting
+    wb = load_workbook(output_file)
+    ws = wb.active
+
+    # Apply color formatting based on 'Dénéfice potentiel' values
+    for index, row in df.iterrows():
+        if row['Dénéfice potentiel'] != nan:
+            pourcentage_benef = row['Dénéfice potentiel']
+            if pd.notna(pourcentage_benef) and isinstance(pourcentage_benef, str):  # Check if it's a string and not NaN
+                pourcentage_benef = float(pourcentage_benef[:-1])  # Remove the '%' symbol and convert to float
+                if pourcentage_benef > 0:
+                    set_cell_color(ws, index+2, 10, '00FF00')  # Green
+                elif pourcentage_benef < 0:
+                    set_cell_color(ws, index+2, 10, 'FF0000')  # Red
                 else:
-                    print("Prix non trouvé dans la balise.")
+                    set_cell_color(ws, index+2, 10, 'C0C0C0')  # Gray
+
+    # Save the final Excel file with color formatting
+    final_output_file = 'Achat_lego_updated.xlsx'
+    wb.save(final_output_file)
+    print("Data updated and saved to", final_output_file)
 
 # Utilisation du script avec le fichier 'Achat_lego.xlsx'
 check_prices('Achat_lego.xlsx')
-
+print()
+print()
 
 
 def scrape_idealo():
@@ -110,7 +142,7 @@ def scrape_idealo():
             sorted_data = sorted(data, key=lambda x: x[2], reverse=True)
 
             for item in sorted_data:
-                print(f"Lien : {item[0]:<110} Prix : {item[1]:<7} €    Réduction : {item[2]:.2f}%")
+                print(f"Lien: {item[0]:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%")
         else:
             print("La balise contenant les résultats n'a pas été trouvée.")
     else:
