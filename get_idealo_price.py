@@ -5,6 +5,49 @@ from bs4 import BeautifulSoup
 import re
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
+import os
+from datetime import date, timedelta
+from win10toast import ToastNotifier
+import time
+
+
+# Fonction pour afficher la notification sans durée
+def show_notification(title, message):
+    toaster = ToastNotifier()
+    toaster.show_toast(title, message, duration=None, threaded=True)
+
+# Fonction pour charger les liens depuis un fichier
+def load_links(file_path):
+    if os.path.exists(file_path):
+        with open(file_path, "r") as file:
+            links = file.read().splitlines()
+            return links
+    else:
+        return []
+
+# Fonction pour sauvegarder les liens dans un fichier
+def save_links(file_path, links):
+    with open(file_path, "w") as file:
+        for link in links:
+            file.write(link + "\n")
+
+# Fonction pour trouver le fichier du jour le plus proche
+def find_closest_file():
+    today = date.today()
+    closest_file = None
+    closest_diff = timedelta(days=365)  # Initial value set to one year
+
+    for file_name in os.listdir("liens"):
+        if file_name.endswith("_links.txt"):
+            file_date_str = file_name[:10]
+            file_date = date.fromisoformat(file_date_str)
+            diff = abs(today - file_date)
+            if diff < closest_diff:
+                closest_diff = diff
+                closest_file = file_name
+
+    return closest_file
+
 
 def set_cell_color(ws, row, column, color):
     cell = ws.cell(row=row, column=column)
@@ -141,12 +184,42 @@ def scrape_idealo():
             # Tri des données en fonction du pourcentage de réduction
             sorted_data = sorted(data, key=lambda x: x[2], reverse=True)
 
+            # Obtenir la date du jour au format YYYY-MM-DD
+            today = date.today().strftime("%Y-%m-%d")
+
+            # Trouver le fichier du jour le plus proche
+            closest_file = find_closest_file()
+
+            if closest_file:
+                # Charger les liens depuis le fichier du jour le plus proche
+                existing_links = load_links(os.path.join("liens", closest_file))
+            else:
+                existing_links = []
+
+            # Vérifier les nouveaux liens et les mettre en "vert" lors de l'affichage
+            new_links = []
+            mail_to_send = ""
             for item in sorted_data:
-                print(f"Lien: {item[0]:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%")
+                link_url = item[0].strip()
+                if link_url not in existing_links:
+                    new_links.append(link_url)
+                    mail_to_send += "Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%\n"
+                    print("\033[92m" + f"Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%" + "\033[0m")
+                else:
+                    print(f"Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%")
+            notification_title = "Notification Title"
+
+            show_notification(notification_title, mail_to_send)
+            # Sauvegarder les liens mis à jour dans le fichier du jour
+            updated_links = existing_links + new_links
+            save_links(os.path.join("liens", today + "_links.txt"), updated_links)
         else:
             print("La balise contenant les résultats n'a pas été trouvée.")
     else:
         print("Impossible d'accéder à la page web.")
-
-# Appeler la fonction pour récupérer les informations depuis la page web
-scrape_idealo()
+if __name__ == "__main__":
+    # Boucle pour appeler la fonction scrape_idealo() toutes les 2 minutes
+    while True:
+        # Appeler la fonction pour récupérer les informations depuis la page web
+        scrape_idealo()
+        time.sleep(5)  # Attendre 2 minutes (120 secondes) avant de rappeler la fonction
