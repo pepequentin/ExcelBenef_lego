@@ -4,3 +4,5 @@ pip install openpyxl
 pip install win10toast
 pip install winrt
 pip install windows.ui.notifications
+pip install plyer pywebview
+pip install pydub

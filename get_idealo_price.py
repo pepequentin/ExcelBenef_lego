@@ -7,16 +7,44 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 import os
 from datetime import date, timedelta
-from win10toast import ToastNotifier
+from plyer import notification
+import webbrowser
 import time
+import pyglet
+import pyglet.media as media
 
 c3po_ico = 'c3po.ico'
+sound_to_play = "R2D2-hey-you.wav"
 
+# Fonction pour gérer l'événement de fin de lecture du son
+def on_player_eos():
+    pyglet.app.exit()
 
-# Fonction pour afficher la notification sans durée
+# Fonction pour ouvrir une page web et jouer un son en arrière-plan
+def open_webpage(link):
+    # Fonction pour jouer le son en arrière-plan
+    def play_sound():
+        src = media.load(sound_to_play)
+        player = media.Player()
+        player.queue(src)
+        player.volume = 1.0
+        player.play()
+
+        # Attacher la fonction on_player_eos à l'événement on_eos
+        player.push_handlers(on_eos=on_player_eos)
+        try:
+            pyglet.app.run()
+        except KeyboardInterrupt:
+            player.next()
+
+    # Ouvrir la page web
+    webbrowser.open(link)
+    # Jouer le son en arrière-plan
+    play_sound()
+
+# Fonction pour afficher la notification avec un lien cliquable
 def show_notification(title, message):
-    toaster = ToastNotifier()
-    toaster.show_toast(title, message, threaded=True, icon_path=c3po_ico)
+    notification.notify(title=title, message=message, app_icon=c3po_ico, timeout=None)
 
 # Fonction pour charger les liens depuis un fichier
 def load_links(file_path):
@@ -29,7 +57,7 @@ def load_links(file_path):
 
 # Fonction pour sauvegarder les liens dans un fichier
 def save_links(file_path, links):
-    print("save file: ", file_path)
+    print("Sauvegarde du fichier :", file_path)
     with open(file_path, "w") as file:
         for link in links:
             file.write(link + "\n")
@@ -38,7 +66,7 @@ def save_links(file_path, links):
 def find_closest_file():
     today = date.today()
     closest_file = None
-    closest_diff = timedelta(days=365)  # Initial value set to one year
+    closest_diff = timedelta(days=365)  # Valeur initiale définie à un an
 
     for file_name in os.listdir("liens"):
         if file_name.endswith("_links.txt"):
@@ -51,40 +79,33 @@ def find_closest_file():
 
     return closest_file
 
-
+# Fonction pour définir la couleur d'une cellule dans le fichier Excel
 def set_cell_color(ws, row, column, color):
     cell = ws.cell(row=row, column=column)
     cell.fill = PatternFill(start_color=color, end_color=color, fill_type='solid')
 
+# Fonction pour vérifier les prix et les mises à jour dans le fichier Excel
 def check_prices(file_path):
     df = pd.read_excel(file_path)
     for index, row in df.iterrows():
-
-
         lien = row[1]
         prix_achat = row[5]
 
         if pd.notna(lien) and isinstance(lien, str):
             # En-tête User-Agent
             user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
-
             # En-têtes de la requête
             headers = {
-            'User-Agent': user_agent
+                'User-Agent': user_agent
             }
-
             # Faire une requête GET en utilisant le proxy et l'en-tête User-Agent
             response = requests.get(lien, headers=headers)
-
             # Get HTML source code
             html_source_code = response.text
-
             # Parsing HTML
             soup = BeautifulSoup(html_source_code, "html.parser")
-
             # Trouver la balise contenant le prix
-            html_span = soup.find_all('span', {'class' : 'oopStage-priceRangePrice'})
-
+            html_span = soup.find_all('span', {'class': 'oopStage-priceRangePrice'})
             # Utiliser une expression régulière pour extraire le prix
             prix_pattern = re.compile(r'\d+,\d+')
 
@@ -94,47 +115,46 @@ def check_prices(file_path):
                     prix = float(prix_trouve.group().replace(",", "."))
                     # Comparer le prix trouvé avec le prix d'achat
                     if prix:
-                        # Now let's compare the found price with the purchase price
+                        # Comparer le prix trouvé avec le prix d'achat
                         if prix_achat != 0:
                             pourcentage_benef = ((prix - prix_achat) / prix_achat) * 100
                         else:
                             pourcentage_benef = ((prix - prix_achat) / 1) * 100
 
-                        # Store the values in the DataFrame with '%' symbol
+                        # Stocker les valeurs dans le DataFrame avec le symbole '%'
                         df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
                         df.at[index, 'Dénéfice potentiel'] = f"{pourcentage_benef:.2f}"
 
-    # Save the updated DataFrame to a new Excel file
+    # Sauvegarder le DataFrame mis à jour dans un nouveau fichier Excel
     output_file = 'Achat_lego_temp.xlsx'
     df.to_excel(output_file, index=False)
 
-    # Load the workbook to apply color formatting
+    # Charger le classeur pour appliquer le formatage des couleurs
     wb = load_workbook(output_file)
     ws = wb.active
 
-    # Apply color formatting based on 'Dénéfice potentiel' values
+    # Appliquer le formatage des couleurs en fonction des valeurs de 'Dénéfice potentiel'
     for index, row in df.iterrows():
         if row['Dénéfice potentiel'] != nan:
             pourcentage_benef = row['Dénéfice potentiel']
-            if pd.notna(pourcentage_benef) and isinstance(pourcentage_benef, str):  # Check if it's a string and not NaN
-                pourcentage_benef = float(pourcentage_benef[:-1])  # Remove the '%' symbol and convert to float
+            if pd.notna(pourcentage_benef) and isinstance(pourcentage_benef, str):  # Vérifier si c'est une chaîne et non NaN
+                pourcentage_benef = float(pourcentage_benef[:-1])  # Supprimer le symbole '%' et convertir en float
                 if pourcentage_benef > 0:
-                    set_cell_color(ws, index+2, 10, '00FF00')  # Green
+                    set_cell_color(ws, index + 2, 10, '00FF00')  # Vert
                 elif pourcentage_benef < 0:
-                    set_cell_color(ws, index+2, 10, 'FF0000')  # Red
+                    set_cell_color(ws, index + 2, 10, 'FF0000')  # Rouge
                 else:
-                    set_cell_color(ws, index+2, 10, 'C0C0C0')  # Gray
+                    set_cell_color(ws, index + 2, 10, 'C0C0C0')  # Gris
 
-    # Save the final Excel file with color formatting
+    # Sauvegarder le fichier Excel final avec le formatage des couleurs
     final_output_file = 'Achat_lego_updated.xlsx'
     wb.save(final_output_file)
-    print("Data updated and saved to", final_output_file)
+    print("Données mises à jour et sauvegardées dans", final_output_file)
 
 # Utilisation du script avec le fichier 'Achat_lego.xlsx'
 check_prices('Achat_lego.xlsx')
 print()
 print()
-
 
 def scrape_idealo():
     user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
@@ -201,18 +221,17 @@ def scrape_idealo():
 
             # Vérifier les nouveaux liens et les mettre en "vert" lors de l'affichage
             new_links = []
-            mail_to_send = ""
+            pop_up_message = ""
             for item in sorted_data:
                 link_url = item[0].strip()
                 if link_url not in existing_links:
                     new_links.append(link_url)
-                    mail_to_send += "Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%\n"
+                    pop_up_message = f"Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%\n"
                     print("\033[92m" + f"Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%" + "\033[0m")
-                else:
-                    print(f"Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%")
-            notification_title = "Notification Title"
+                    show_notification("New offer to check", pop_up_message)
+                    open_webpage(link_url)
 
-            show_notification(notification_title, mail_to_send)
+
             # Sauvegarder les liens mis à jour dans le fichier du jour
             updated_links = existing_links + new_links
             save_links(os.path.join("liens", today + "_links.txt"), updated_links)
@@ -225,4 +244,4 @@ if __name__ == "__main__":
     while True:
         # Appeler la fonction pour récupérer les informations depuis la page web
         scrape_idealo()
-        time.sleep(5)  # Attendre 2 minutes (120 secondes) avant de rappeler la fonction
+        time.sleep(60)  # Attendre 2 minutes (120 secondes) avant de rappeler la fonction
