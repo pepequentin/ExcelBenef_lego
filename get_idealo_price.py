@@ -275,4 +275,4 @@ if __name__ == "__main__":
     while True:
         # Appeler la fonction pour récupérer les informations depuis la page web
         scrape_idealo()
-        time.sleep(120)  # Attendre 2 minutes (120 secondes) avant de rappeler la fonction
+        time.sleep(60)  # Attendre 2 minutes (120 secondes) avant de rappeler la fonction
