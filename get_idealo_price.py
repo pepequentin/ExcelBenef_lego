@@ -15,38 +15,47 @@ import pyglet.media as media
 
 c3po_ico = 'c3po.ico'
 sound_to_play = "R2D2-hey-you.wav"
-
-# Fonction pour gérer l'événement de fin de lecture du son
+##
+#   Fonction pour gérer l'événement de fin de lecture du son
+##
 def on_player_eos():
     pyglet.app.exit()
 
-# Fonction pour ouvrir une page web et jouer un son en arrière-plan
+##
+#   Fonction pour jouer le son en arrière-plan
+##
+def play_sound():
+    src = media.load(sound_to_play)
+    player = media.Player()
+    player.queue(src)
+    player.volume = 1.0
+    player.play()
+
+    # Attacher la fonction on_player_eos à l'événement on_eos
+    player.push_handlers(on_eos=on_player_eos)
+    try:
+        pyglet.app.run()
+    except KeyboardInterrupt:
+        player.next()
+
+##
+#   Fonction pour ouvrir une page web et jouer un son en arrière-plan
+##
 def open_webpage(link):
-    # Fonction pour jouer le son en arrière-plan
-    def play_sound():
-        src = media.load(sound_to_play)
-        player = media.Player()
-        player.queue(src)
-        player.volume = 1.0
-        player.play()
-
-        # Attacher la fonction on_player_eos à l'événement on_eos
-        player.push_handlers(on_eos=on_player_eos)
-        try:
-            pyglet.app.run()
-        except KeyboardInterrupt:
-            player.next()
-
     # Ouvrir la page web
     webbrowser.open(link)
     # Jouer le son en arrière-plan
     play_sound()
 
-# Fonction pour afficher la notification avec un lien cliquable
+##
+#   Fonction pour afficher la notification avec un lien cliquable
+##
 def show_notification(title, message):
     notification.notify(title=title, message=message, app_icon=c3po_ico, timeout=None)
 
-# Fonction pour charger les liens depuis un fichier
+##
+#   Fonction pour charger les liens depuis un fichier
+##
 def load_links(file_path):
     if os.path.exists(file_path):
         with open(file_path, "r") as file:
@@ -55,14 +64,18 @@ def load_links(file_path):
     else:
         return []
 
-# Fonction pour sauvegarder les liens dans un fichier
+##
+#   Fonction pour sauvegarder les liens dans un fichier
+##
 def save_links(file_path, links):
     print("Sauvegarde du fichier :", file_path)
     with open(file_path, "w") as file:
         for link in links:
             file.write(link + "\n")
 
-# Fonction pour trouver le fichier du jour le plus proche
+##
+#   Fonction pour trouver le fichier du jour le plus proche
+##
 def find_closest_file():
     today = date.today()
     closest_file = None
@@ -79,12 +92,17 @@ def find_closest_file():
 
     return closest_file
 
-# Fonction pour définir la couleur d'une cellule dans le fichier Excel
+##
+#   Fonction pour définir la couleur d'une cellule dans le fichier Excel
+##
 def set_cell_color(ws, row, column, color):
     cell = ws.cell(row=row, column=column)
     cell.fill = PatternFill(start_color=color, end_color=color, fill_type='solid')
 
-# Fonction pour vérifier les prix et les mises à jour dans le fichier Excel
+
+##
+#   Utilisation du script avec le fichier 'Achat_lego.xlsx'
+##
 def check_prices(file_path):
     df = pd.read_excel(file_path)
     for index, row in df.iterrows():
@@ -156,18 +174,29 @@ check_prices('Achat_lego.xlsx')
 print()
 print()
 
+##
+#   Fonction principale pour récupérer les informations depuis la page web
+##
 def scrape_idealo():
+    # User agent pour la requête HTTP
     user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
 
     # En-têtes de la requête
     headers = {
-    'User-Agent': user_agent
+        'User-Agent': user_agent
     }
+
+    # URL de la page à scraper
     url = "https://www.idealo.fr/cat/9552F774905oE0oJ4/lego.html"
+
     # Faire une requête GET pour obtenir le contenu HTML de la page
     response = requests.get(url, headers=headers)
+
     if response.status_code == 200:
+        # Obtenir le contenu HTML de la page
         html_source_code = response.text
+
+        # Parser le contenu HTML avec BeautifulSoup
         soup = BeautifulSoup(html_source_code, "html.parser")
 
         # Trouver la balise qui contient les résultats
@@ -177,7 +206,8 @@ def scrape_idealo():
             # Trouver tous les éléments de la liste
             items = result_list.find_all("div", class_="sr-resultList__item")
 
-            data = []  # Liste pour stocker les informations des éléments
+            # Liste pour stocker les informations des éléments
+            data = []
 
             for item in items:
                 # Trouver le lien de l'élément
@@ -228,9 +258,8 @@ def scrape_idealo():
                     new_links.append(link_url)
                     pop_up_message = f"Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%\n"
                     print("\033[92m" + f"Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%" + "\033[0m")
-                    show_notification("New offer to check", pop_up_message)
+                    show_notification("Nouvelle offre à vérifier", pop_up_message)
                     open_webpage(link_url)
-
 
             # Sauvegarder les liens mis à jour dans le fichier du jour
             updated_links = existing_links + new_links
@@ -239,9 +268,11 @@ def scrape_idealo():
             print("La balise contenant les résultats n'a pas été trouvée.")
     else:
         print("Impossible d'accéder à la page web.")
+
+
 if __name__ == "__main__":
     # Boucle pour appeler la fonction scrape_idealo() toutes les 2 minutes
     while True:
         # Appeler la fonction pour récupérer les informations depuis la page web
         scrape_idealo()
-        time.sleep(60)  # Attendre 2 minutes (120 secondes) avant de rappeler la fonction
+        time.sleep(120)  # Attendre 2 minutes (120 secondes) avant de rappeler la fonction
