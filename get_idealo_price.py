@@ -10,11 +10,13 @@ from datetime import date, timedelta
 from win10toast import ToastNotifier
 import time
 
+c3po_ico = 'c3po.ico'
+
 
 # Fonction pour afficher la notification sans durée
 def show_notification(title, message):
     toaster = ToastNotifier()
-    toaster.show_toast(title, message, duration=None, threaded=True)
+    toaster.show_toast(title, message, threaded=True, icon_path=c3po_ico)
 
 # Fonction pour charger les liens depuis un fichier
 def load_links(file_path):
@@ -27,6 +29,7 @@ def load_links(file_path):
 
 # Fonction pour sauvegarder les liens dans un fichier
 def save_links(file_path, links):
+    print("save file: ", file_path)
     with open(file_path, "w") as file:
         for link in links:
             file.write(link + "\n")
@@ -69,7 +72,7 @@ def check_prices(file_path):
             headers = {
             'User-Agent': user_agent
             }
-        
+
             # Faire une requête GET en utilisant le proxy et l'en-tête User-Agent
             response = requests.get(lien, headers=headers)
 
@@ -98,8 +101,8 @@ def check_prices(file_path):
                             pourcentage_benef = ((prix - prix_achat) / 1) * 100
 
                         # Store the values in the DataFrame with '%' symbol
-                        df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f} €"
-                        df.at[index, 'Dénéfice potentiel'] = f"{pourcentage_benef:.2f}%"
+                        df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
+                        df.at[index, 'Dénéfice potentiel'] = f"{pourcentage_benef:.2f}"
 
     # Save the updated DataFrame to a new Excel file
     output_file = 'Achat_lego_temp.xlsx'
