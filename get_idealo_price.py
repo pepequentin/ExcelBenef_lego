@@ -171,10 +171,6 @@ def check_prices(file_path):
     wb.save(final_output_file)
     print("Données mises à jour et sauvegardées dans", final_output_file)
 
-# Utilisation du script avec le fichier 'Achat_lego.xlsx'
-check_prices('Achat_lego.xlsx')
-print()
-print()
 
 ##
 #   Fonction principale pour récupérer les informations depuis la page web
@@ -268,15 +264,19 @@ def scrape_idealo(url):
         print("Impossible d'accéder à la page web.")
 
 
-# if __name__ == "__main__":
-#     # Boucle pour appeler la fonction scrape_idealo() toutes les 2 minutes
-#     while True:
-#         urls_to_scrape = [
-#             "https://www.idealo.fr/cat/9552F774905oE0oJ4/lego.html",
-#             # Autres URLs...
-#         ]
+if __name__ == "__main__":
+    # Utilisation du script avec le fichier 'Achat_lego.xlsx'
+    check_prices('Achat_lego.xlsx')
+    print()
+    print()
+    # Boucle pour appeler la fonction scrape_idealo() toutes les 2 minutes
+    while True:
+        urls_to_scrape = [
+            "https://www.idealo.fr/cat/9552F774905oE0oJ4/lego.html",
+            # Autres URLs...
+        ]
 
-#         for url in urls_to_scrape:
-#             # Appeler la fonction pour récupérer les informations depuis la page web
-#             scrape_idealo(url)
-#         time.sleep(60)  # Attendre 2 minutes (120 secondes) avant de rappeler la fonction
+        for url in urls_to_scrape:
+            # Appeler la fonction pour récupérer les informations depuis la page web
+            scrape_idealo(url)
+        time.sleep(60)  # Attendre 2 minutes (120 secondes) avant de rappeler la fonction
