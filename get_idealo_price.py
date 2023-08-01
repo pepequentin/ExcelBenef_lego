@@ -107,9 +107,10 @@ def check_prices(file_path):
     df = pd.read_excel(file_path)
     for index, row in df.iterrows():
         lien = row[1]
-        prix_achat = row[5]
+        prix_achat = row[6]
+        nb_exemplaires = row[12]
 
-        if pd.notna(lien) and isinstance(lien, str):
+        if pd.notna(lien) and isinstance(lien, str) and pd.notna(prix_achat) and nb_exemplaires > 0:
             # En-tête User-Agent
             user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
             # En-têtes de la requête
@@ -126,7 +127,8 @@ def check_prices(file_path):
             html_span = soup.find_all('span', {'class': 'oopStage-priceRangePrice'})
             # Utiliser une expression régulière pour extraire le prix
             prix_pattern = re.compile(r'\d+,\d+')
-
+            # Calcul du prix d'achat par exemplaire
+            prix_achat_par_exemplaire = prix_achat / nb_exemplaires
             for span in html_span:
                 prix_trouve = prix_pattern.search(span.text)
                 if prix_trouve:
@@ -135,13 +137,13 @@ def check_prices(file_path):
                     if prix:
                         # Comparer le prix trouvé avec le prix d'achat
                         if prix_achat != 0:
-                            pourcentage_benef = ((prix - prix_achat) / prix_achat) * 100
+                            pourcentage_benef = ((prix - prix_achat_par_exemplaire) / prix_achat_par_exemplaire) * 100
                         else:
-                            pourcentage_benef = ((prix - prix_achat) / 1) * 100
+                            pourcentage_benef = ((prix - prix_achat_par_exemplaire) / 1) * 100
 
                         # Stocker les valeurs dans le DataFrame avec le symbole '%'
                         df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
-                        df.at[index, 'Dénéfice potentiel'] = f"{pourcentage_benef:.2f}"
+                        df.at[index, 'Dénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
 
     # Sauvegarder le DataFrame mis à jour dans un nouveau fichier Excel
     output_file = 'Achat_lego_temp.xlsx'
@@ -158,11 +160,11 @@ def check_prices(file_path):
             if pd.notna(pourcentage_benef) and isinstance(pourcentage_benef, str):  # Vérifier si c'est une chaîne et non NaN
                 pourcentage_benef = float(pourcentage_benef[:-1])  # Supprimer le symbole '%' et convertir en float
                 if pourcentage_benef > 0:
-                    set_cell_color(ws, index + 2, 10, '00FF00')  # Vert
+                    set_cell_color(ws, index + 2, 11, '00FF00')  # Vert
                 elif pourcentage_benef < 0:
-                    set_cell_color(ws, index + 2, 10, 'FF0000')  # Rouge
+                    set_cell_color(ws, index + 2, 11, 'FF0000')  # Rouge
                 else:
-                    set_cell_color(ws, index + 2, 10, 'C0C0C0')  # Gris
+                    set_cell_color(ws, index + 2, 11, 'C0C0C0')  # Gris
 
     # Sauvegarder le fichier Excel final avec le formatage des couleurs
     final_output_file = 'Achat_lego_updated.xlsx'
@@ -177,7 +179,7 @@ print()
 ##
 #   Fonction principale pour récupérer les informations depuis la page web
 ##
-def scrape_idealo():
+def scrape_idealo(url):
     # User agent pour la requête HTTP
     user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
 
@@ -185,9 +187,6 @@ def scrape_idealo():
     headers = {
         'User-Agent': user_agent
     }
-
-    # URL de la page à scraper
-    url = "https://www.idealo.fr/cat/9552F774905oE0oJ4/lego.html"
 
     # Faire une requête GET pour obtenir le contenu HTML de la page
     response = requests.get(url, headers=headers)
@@ -200,23 +199,23 @@ def scrape_idealo():
         soup = BeautifulSoup(html_source_code, "html.parser")
 
         # Trouver la balise qui contient les résultats
-        result_list = soup.find("div", class_="sr-resultList resultList--GRID")
+        result_list = soup.find("div", class_="offerList wishlist offerList--tileview")
 
         if result_list:
             # Trouver tous les éléments de la liste
-            items = result_list.find_all("div", class_="sr-resultList__item")
+            items = result_list.find_all("div", class_="offerList-item")
 
             # Liste pour stocker les informations des éléments
             data = []
 
             for item in items:
                 # Trouver le lien de l'élément
-                link = item.find("div", class_="sr-resultItemLink sr-resultItemTile__link")
-                if link:
-                    link_url = link.a["href"]
-
+                link = item.find("a", class_="offerList-itemWrapper")["href"]
+                link_temp = "https://www.idealo.fr"
+                link_temp += link
+                link = link_temp
                 # Trouver le prix de l'élément
-                price = item.find("div", class_="sr-detailedPriceInfo__price")
+                price = item.find("div", class_="offerList-item-priceMin")
                 if price:
                     # Utiliser une expression régulière pour extraire le prix du texte
                     prix_pattern = re.compile(r'\d+,\d+')
@@ -224,16 +223,15 @@ def scrape_idealo():
                     if prix_trouve:
                         prix = prix_trouve.group()
 
-                # Trouver le pourcentage dans la balise de réduction
-                saving_badge = item.find("div", class_="sr-bargainBadge__savingBadge")
+                # Trouver le pourcentage de réduction
+                saving_badge = item.find("div", class_="sales-badge")
                 if saving_badge:
                     saving_percentage = saving_badge.text.strip()
                     # Convertir le pourcentage en nombre pour le tri
                     saving_percentage_value = float(saving_percentage[:-1]) if saving_percentage[-1] == "%" else 0
 
                 # Ajouter les informations dans la liste des données
-                data.append((link_url.strip(), prix.strip(), saving_percentage_value))
-
+                data.append((link, prix.strip(), saving_percentage_value))
             # Tri des données en fonction du pourcentage de réduction
             sorted_data = sorted(data, key=lambda x: x[2], reverse=True)
 
@@ -251,14 +249,14 @@ def scrape_idealo():
 
             # Vérifier les nouveaux liens et les mettre en "vert" lors de l'affichage
             new_links = []
-            pop_up_message = ""
+            # pop_up_message = ""
             for item in sorted_data:
-                link_url = item[0].strip()
+                link_url = item[0]
                 if link_url not in existing_links:
                     new_links.append(link_url)
-                    pop_up_message = f"Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%\n"
+                    # pop_up_message = f"Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%\n"
                     print("\033[92m" + f"Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%" + "\033[0m")
-                    show_notification("Nouvelle offre à vérifier", pop_up_message)
+                    # show_notification("Nouvelle offre à vérifier", pop_up_message)
                     open_webpage(link_url)
 
             # Sauvegarder les liens mis à jour dans le fichier du jour
@@ -270,9 +268,15 @@ def scrape_idealo():
         print("Impossible d'accéder à la page web.")
 
 
-if __name__ == "__main__":
-    # Boucle pour appeler la fonction scrape_idealo() toutes les 2 minutes
-    while True:
-        # Appeler la fonction pour récupérer les informations depuis la page web
-        scrape_idealo()
-        time.sleep(60)  # Attendre 2 minutes (120 secondes) avant de rappeler la fonction
+# if __name__ == "__main__":
+#     # Boucle pour appeler la fonction scrape_idealo() toutes les 2 minutes
+#     while True:
+#         urls_to_scrape = [
+#             "https://www.idealo.fr/cat/9552F774905oE0oJ4/lego.html",
+#             # Autres URLs...
+#         ]
+
+#         for url in urls_to_scrape:
+#             # Appeler la fonction pour récupérer les informations depuis la page web
+#             scrape_idealo(url)
+#         time.sleep(60)  # Attendre 2 minutes (120 secondes) avant de rappeler la fonction
