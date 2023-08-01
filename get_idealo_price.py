@@ -259,7 +259,72 @@ def scrape_idealo(url):
             updated_links = existing_links + new_links
             save_links(os.path.join("liens", today + "_links.txt"), updated_links)
         else:
-            print("La balise contenant les résultats n'a pas été trouvée.")
+            # Trouver la balise qui contient les résultats
+            result_list = soup.find("div", class_="sr-resultList resultList--GRID")
+
+            if result_list:
+                # Trouver tous les éléments de la liste
+                items = result_list.find_all("div", class_="sr-resultList__item")
+
+                # Liste pour stocker les informations des éléments
+                data = []
+
+                for item in items:
+                    # Trouver le lien de l'élément
+                    link = item.find("div", class_="sr-resultItemTile__link")
+                    if link:
+                        link_url = link.a["href"]
+
+                    # Trouver le prix de l'élément
+                    price = item.find("div", class_="sr-detailedPriceInfo__price")
+                    if price:
+                        # Utiliser une expression régulière pour extraire le prix du texte
+                        prix_pattern = re.compile(r'\d+,\d+')
+                        prix_trouve = prix_pattern.search(price.text)
+                        if prix_trouve:
+                            prix = float(prix_trouve.group().replace(",", "."))
+
+                    # Trouver le pourcentage dans la balise de réduction
+                    saving_badge = item.find("div", class_="sr-bargainBadge__savingBadge")
+                    if saving_badge:
+                        saving_percentage = saving_badge.text.strip()
+                        # Convertir le pourcentage en nombre pour le tri
+                        saving_percentage_value = float(saving_percentage[:-1]) if saving_percentage[-1] == "%" else 0
+
+                    # Ajouter les informations dans la liste des données
+                data.append((link_url.strip(), prix, saving_percentage_value))
+                # Tri des données en fonction du pourcentage de réduction
+                sorted_data = sorted(data, key=lambda x: x[2], reverse=True)
+
+                # Obtenir la date du jour au format YYYY-MM-DD
+                today = date.today().strftime("%Y-%m-%d")
+
+                # Trouver le fichier du jour le plus proche
+                closest_file = find_closest_file()
+
+                if closest_file:
+                    # Charger les liens depuis le fichier du jour le plus proche
+                    existing_links = load_links(os.path.join("liens", closest_file))
+                else:
+                    existing_links = []
+
+                # Vérifier les nouveaux liens et les mettre en "vert" lors de l'affichage
+                new_links = []
+                # pop_up_message = ""
+                for item in sorted_data:
+                    link_url = item[0]
+                    if link_url not in existing_links:
+                        new_links.append(link_url)
+                        # pop_up_message = f"Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%\n"
+                        print("\033[92m" + f"Lien: {link_url:<130} Prix: {item[1]:<7} €    Réduction: {item[2]:.2f}%" + "\033[0m")
+                        # show_notification("Nouvelle offre à vérifier", pop_up_message)
+                        open_webpage(link_url)
+
+                # Sauvegarder les liens mis à jour dans le fichier du jour
+                updated_links = existing_links + new_links
+                save_links(os.path.join("liens", today + "_links.txt"), updated_links)
+            else:
+                print("V1 et V2 La balise contenant les résultats n'a pas été trouvée.")
     else:
         print("Impossible d'accéder à la page web.")
 
