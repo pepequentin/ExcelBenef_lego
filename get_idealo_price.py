@@ -69,7 +69,6 @@ def load_links(file_path):
 #   Fonction pour sauvegarder les liens dans un fichier
 ##
 def save_links(file_path, links):
-    print("Sauvegarde du fichier :", file_path)
     with open(file_path, "w") as file:
         for link in links:
             file.write(link + "\n")
@@ -77,13 +76,13 @@ def save_links(file_path, links):
 ##
 #   Fonction pour trouver le fichier du jour le plus proche
 ##
-def find_closest_file():
+def find_closest_file_idealo():
     today = date.today()
     closest_file = None
     closest_diff = timedelta(days=365)  # Valeur initiale définie à un an
 
     for file_name in os.listdir("liens"):
-        if file_name.endswith("_links.txt"):
+        if file_name.endswith("_idealo_links.txt"):
             file_date_str = file_name[:10]
             file_date = date.fromisoformat(file_date_str)
             diff = abs(today - file_date)
@@ -92,6 +91,27 @@ def find_closest_file():
                 closest_file = file_name
 
     return closest_file
+
+
+##
+#   Fonction pour trouver le fichier du jour le plus proche
+##
+def find_closest_file_german():
+    today = date.today()
+    closest_file = None
+    closest_diff = timedelta(days=365)  # Valeur initiale définie à un an
+
+    for file_name in os.listdir("liens"):
+        if file_name.endswith("_german_links.txt"):
+            file_date_str = file_name[:10]
+            file_date = date.fromisoformat(file_date_str)
+            diff = abs(today - file_date)
+            if diff < closest_diff:
+                closest_diff = diff
+                closest_file = file_name
+
+    return closest_file
+
 
 ##
 #   Fonction pour définir la couleur d'une cellule dans le fichier Excel
@@ -236,7 +256,7 @@ def scrape_idealo(url):
             today = date.today().strftime("%Y-%m-%d")
 
             # Trouver le fichier du jour le plus proche
-            closest_file = find_closest_file()
+            closest_file = find_closest_file_idealo()
 
             if closest_file:
                 # Charger les liens depuis le fichier du jour le plus proche
@@ -258,7 +278,7 @@ def scrape_idealo(url):
 
             # Sauvegarder les liens mis à jour dans le fichier du jour
             updated_links = existing_links + new_links
-            save_links(os.path.join("liens", today + "_links.txt"), updated_links)
+            save_links(os.path.join("liens", today + "_idealo_links.txt"), updated_links)
         else:
             # Trouver la balise qui contient les résultats
             result_list = soup.find("div", class_="sr-resultList resultList--GRID")
@@ -301,7 +321,7 @@ def scrape_idealo(url):
                 today = date.today().strftime("%Y-%m-%d")
 
                 # Trouver le fichier du jour le plus proche
-                closest_file = find_closest_file()
+                closest_file = find_closest_file_idealo()
 
                 if closest_file:
                     # Charger les liens depuis le fichier du jour le plus proche
@@ -323,21 +343,94 @@ def scrape_idealo(url):
 
                 # Sauvegarder les liens mis à jour dans le fichier du jour
                 updated_links = existing_links + new_links
-                save_links(os.path.join("liens", today + "_links.txt"), updated_links)
+                save_links(os.path.join("liens", today + "_idealo_links.txt"), updated_links)
             else:
                 print("V1 et V2 La balise contenant les résultats n'a pas été trouvée.")
     else:
         print("Impossible d'accéder à la page web.")
 
 
+
+
+def scrape_german(url):
+    user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
+
+    headers = {
+        'User-Agent': user_agent
+    }
+
+    response = requests.get(url, headers=headers)
+
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    # Trouver toutes les balises 'div' avec la classe 'productbox'
+    product_boxes = soup.find_all('div', class_='productbox')
+
+    # Liste pour stocker les informations des produits
+    data = []
+
+    for product_box in product_boxes:
+        # Vérifier si la balise 'div' avec la classe 'ribbon' contient le texte 'Ausverkauft'
+        ribbon = product_box.find('div', class_='ribbon')
+        if ribbon and 'Ausverkauft' in ribbon.text:
+            # Le produit est épuisé, nous le sautons
+            continue
+
+        # Extraire le titre du produit
+        title = product_box.find('a', class_='text-clamp-2').text.strip()
+
+        # Extraire l'URL du produit
+        product_url = product_box.find('a', class_='text-clamp-2')['href']
+
+        # Extraire le prix du produit et enlever le symbole "*" et le signe "€"
+        price_with_symbol = product_box.find('div', class_='productbox-price').text.strip()
+        price = price_with_symbol.replace(' *', '').replace(' €', '').replace(',', '.').replace(' ', '')
+
+        # Ajouter les informations dans la liste des données
+        data.append((title, product_url, price))
+
+    # Tri des données en fonction du prix
+    sorted_data = sorted(data, key=lambda x: float(x[2]))
+
+    # Obtenir la date du jour au format YYYY-MM-DD
+    today = date.today().strftime("%Y-%m-%d")
+
+    # Trouver le fichier du jour le plus proche
+    closest_file = find_closest_file_german()
+
+    if closest_file:
+        # Charger les liens depuis le fichier du jour le plus proche
+        existing_links = load_links(os.path.join("liens", closest_file))
+    else:
+        existing_links = []
+
+    # Vérifier les nouveaux liens et les mettre en "vert" lors de l'affichage
+    new_links = []
+    for item in sorted_data:
+        link_url = item[1]
+        if link_url not in existing_links:
+            new_links.append(link_url)
+            print("\033[92m" + f"Url: {item[1]:<130} Prix: {item[2]} €" + "\033[0m")
+            open_webpage(link_url)
+
+    # Sauvegarder les liens mis à jour dans le fichier du jour
+    updated_links = existing_links + new_links
+    save_links(os.path.join("liens", today + "_german_links.txt"), updated_links)
+
+
+
 if __name__ == "__main__":
     # Utilisation du script avec le fichier 'Achat_lego.xlsx'
-    check_prices('Achat_lego.xlsx')
-    print()
-    print()
+    # check_prices('Achat_lego.xlsx')
+    # print()
+    # print()
     # Boucle pour appeler la fonction scrape_idealo() toutes les 2 minutes
     while True:
+        base_url = "https://spiel-und-modellbau.com/?suche=lego+star+wars&seite="
+        for i in range(1, 3):  # Boucle de 1 à 8 inclus
+            url_to_scrape = base_url + str(i)
+            scrape_german(url_to_scrape)
         scrape_idealo("https://www.idealo.fr/cat/9552F774905oE0oJ4/lego.html")
         # Générer un nombre aléatoire entre 4 et 12 (exclus) pour time.sleep()
-        random_sleep_time = random.randrange(10, 20)
+        random_sleep_time = random.randrange(20, 60)
         time.sleep(random_sleep_time)
