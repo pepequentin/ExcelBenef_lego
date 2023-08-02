@@ -12,6 +12,7 @@ import webbrowser
 import time
 import pyglet
 import pyglet.media as media
+import random
 
 c3po_ico = 'c3po.ico'
 sound_to_play = "R2D2-hey-you.wav"
@@ -336,12 +337,7 @@ if __name__ == "__main__":
     print()
     # Boucle pour appeler la fonction scrape_idealo() toutes les 2 minutes
     while True:
-        urls_to_scrape = [
-            "https://www.idealo.fr/cat/9552F774905oE0oJ4/lego.html",
-            # Autres URLs...
-        ]
-
-        for url in urls_to_scrape:
-            # Appeler la fonction pour récupérer les informations depuis la page web
-            scrape_idealo(url)
-        time.sleep(60)  # Attendre 2 minutes (120 secondes) avant de rappeler la fonction
+        scrape_idealo("https://www.idealo.fr/cat/9552F774905oE0oJ4/lego.html")
+        # Générer un nombre aléatoire entre 4 et 12 (exclus) pour time.sleep()
+        random_sleep_time = random.randrange(10, 20)
+        time.sleep(random_sleep_time)
