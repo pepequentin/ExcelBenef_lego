@@ -30,7 +30,7 @@ Le **Bot Idéalo** est un programme conçu pour automatiser le suivi des prix de
 
 - Chose à coder : 
     1.  Prendre le prix de vente `si et seulement si la case du excel est dif de NAN` au lieu du prix idéalo
-    2.  Il est possible que le lego soit assez rare pour qu'il n'apparaisse pas dans idéalo, donc on doit prendre le prix ailleur `à def`.
-    3.  Il est possible que le logi soit assez rare pour qu'il n'apparaisse quand état d'occasion, donc on doit prendre le prix ailleur `à def`.
+    2.  Il est possible que le lego soit assez rare pour qu'il n'apparaisse pas dans idéalo, donc on doit prendre le prix ailleur `à def`.✅
+    3.  Il est possible que le logi soit assez rare pour qu'il n'apparaisse quand état d'occasion, donc on doit prendre le prix ailleur `à def`.✅
     4.  Garder les couleurs de l'input file sur la colonne `Stoké`
     5.  Bot discord pour les notif de nouvelle annonce vinted
