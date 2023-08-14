@@ -144,12 +144,16 @@ def check_prices(file_path):
             html_source_code = response.text
             soup = BeautifulSoup(html_source_code, "html.parser")
             html_span = soup.find_all('span', {'class': 'oopStage-priceRangePrice'})
+            pattern = re.compile(r'<span class="oopStage-conditionButton-wrapper-text-price-prefix">\s*\(non disponible\)\s*</span>')
+            html_source_code = response.text
+            html_span_for_no_news = pattern.findall(html_source_code)
             prix_pattern = re.compile(r'\d+,\d+')
             prix_achat_par_exemplaire = prix_achat / nb_exemplaires
-            for span in html_span:
-                prix_trouve = prix_pattern.search(span.text)
+            # Condition pour les lego qui non pas de prix idealo
+            if not html_span:
+                prix_trouve = row[8]
                 if prix_trouve:
-                    prix = float(prix_trouve.group().replace(",", "."))
+                    prix = prix_trouve
                     if prix:
                         if prix_achat != 0:
                             pourcentage_benef = ((prix - prix_achat_par_exemplaire) / prix_achat_par_exemplaire) * 100
@@ -172,6 +176,62 @@ def check_prices(file_path):
                                 ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
                             else:
                                 ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+            else:
+                for span in html_span:
+                    if html_span_for_no_news:
+                        prix_trouve = prix_pattern.search(span.text)
+                        if prix_trouve:
+                            prix = float(prix_trouve.group().replace(",", "."))
+                            if prix:
+                                prix *= 4
+                                if prix_achat != 0:
+                                    pourcentage_benef = ((prix - prix_achat_par_exemplaire) / prix_achat_par_exemplaire) * 100
+                                else:
+                                    pourcentage_benef = ((prix - prix_achat_par_exemplaire) / 1) * 100
+
+
+                                # Prix mul by the number of product in a temp var
+                                tmp_price = prix * nb_exemplaires
+                                vente_total += tmp_price
+                                df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
+                                df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
+
+                                # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
+                                if pd.notna(row['Bénéfice potentiel']):
+                                    pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
+                                    if pourcentage_benef > 0:
+                                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+                                    elif pourcentage_benef < 0:
+                                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+                                    else:
+                                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+
+                    else:
+                        prix_trouve = prix_pattern.search(span.text)
+                        if prix_trouve:
+                            prix = float(prix_trouve.group().replace(",", "."))
+                            if prix:
+                                if prix_achat != 0:
+                                    pourcentage_benef = ((prix - prix_achat_par_exemplaire) / prix_achat_par_exemplaire) * 100
+                                else:
+                                    pourcentage_benef = ((prix - prix_achat_par_exemplaire) / 1) * 100
+
+
+                                # Prix mul by the number of product in a temp var
+                                tmp_price = prix * nb_exemplaires
+                                vente_total += tmp_price
+                                df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
+                                df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
+
+                                # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
+                                if pd.notna(row['Bénéfice potentiel']):
+                                    pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
+                                    if pourcentage_benef > 0:
+                                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+                                    elif pourcentage_benef < 0:
+                                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+                                    else:
+                                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
 
     final_output_file = 'Achat_lego_updated.xlsx'
     wb.save(final_output_file)
