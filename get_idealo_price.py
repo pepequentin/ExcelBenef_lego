@@ -131,7 +131,7 @@ def check_prices(file_path):
     df = pd.read_excel(file_path)
     wb = openpyxl.load_workbook(file_path)
     ws = wb.active
-
+    vente_total = 0
     for index, row in df.iterrows():
         lien = row[1]
         prix_achat = row[6]
@@ -156,12 +156,16 @@ def check_prices(file_path):
                         else:
                             pourcentage_benef = ((prix - prix_achat_par_exemplaire) / 1) * 100
 
-                        df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
-                        df.at[index, 'Dénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
 
-                        # Appliquer le formatage des couleurs en fonction des valeurs de 'Dénéfice potentiel'
-                        if pd.notna(row['Dénéfice potentiel']):
-                            pourcentage_benef = float(row['Dénéfice potentiel'][:-1])
+                        # Prix mul by the number of product in a temp var
+                        tmp_price = prix * nb_exemplaires
+                        vente_total += tmp_price
+                        df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
+                        df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
+
+                        # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
+                        if pd.notna(row['Bénéfice potentiel']):
+                            pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
                             if pourcentage_benef > 0:
                                 ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
                             elif pourcentage_benef < 0:
@@ -171,23 +175,34 @@ def check_prices(file_path):
 
     final_output_file = 'Achat_lego_updated.xlsx'
     wb.save(final_output_file)
-
     df.to_excel(final_output_file, index=False)
 
     # Charger le classeur pour appliquer le formatage des couleurs
     new_wb = openpyxl.load_workbook(final_output_file)
     ws = new_wb.active
 
-    # Appliquer le formatage des couleurs en fonction des valeurs de 'Dénéfice potentiel'
+    # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
     for index, row in df.iterrows():
-        if pd.notna(row['Dénéfice potentiel']):
-            pourcentage_benef = float(row['Dénéfice potentiel'][:-1])
+        if pd.notna(row['Bénéfice potentiel']):
+            pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
             if pourcentage_benef > 0:
                 ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
             elif pourcentage_benef < 0:
                 ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
             else:
                 ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+
+    # Calculer le coût total
+    cout_total = df['Prix d\'achat'].sum()
+    ws.append(["Cout total", None, cout_total])
+
+
+    # Calculer la vente total
+    ws.append(["Vente total", None, vente_total])
+
+    # Calculer le potentiel bénéficiaire
+    ws.append(["Potentiel benef", None, vente_total - cout_total])
+
 
     final_output_file = 'Achat_lego_updated.xlsx'
     new_wb.save(final_output_file)
@@ -422,8 +437,6 @@ def scrape_german(url):
 if __name__ == "__main__":
     # Utilisation du script avec le fichier 'Achat_lego.xlsx'
     check_prices('Achat_lego.xlsx')
-    print()
-    print()
     # Boucle pour appeler la fonction scrape_idealo() toutes les 2 minutes
     # while True:
     #     base_url = "https://spiel-und-modellbau.com/?suche=lego+star+wars&seite="
