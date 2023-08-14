@@ -130,18 +130,7 @@ def set_cell_color(ws, row, column, color):
 def check_prices(file_path):
     df = pd.read_excel(file_path)
     wb = openpyxl.load_workbook(file_path)
-    new_wb = openpyxl.Workbook()  # Créer un nouveau classeur
-
-    # Copier les styles de chaque cellule du classeur original dans le nouveau classeur
-    for sheet_name in wb.sheetnames:
-        new_sheet = new_wb.create_sheet(title=sheet_name)
-        old_sheet = wb[sheet_name]
-        for row in old_sheet.iter_rows(min_row=1, max_row=old_sheet.max_row, min_col=1, max_col=old_sheet.max_column):
-            for cell in row:
-                new_cell = new_sheet[cell.coordinate]
-                new_cell.value = cell.value
-                if cell.has_style:
-                    new_cell._style = cell._style  # Copier le style de la cellule
+    ws = wb.active
 
     for index, row in df.iterrows():
         lien = row[1]
@@ -170,11 +159,23 @@ def check_prices(file_path):
                         df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
                         df.at[index, 'Dénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
 
-    output_file = 'Achat_lego_temp.xlsx'
-    df.to_excel(output_file, index=False)
+                        # Appliquer le formatage des couleurs en fonction des valeurs de 'Dénéfice potentiel'
+                        if pd.notna(row['Dénéfice potentiel']):
+                            pourcentage_benef = float(row['Dénéfice potentiel'][:-1])
+                            if pourcentage_benef > 0:
+                                ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+                            elif pourcentage_benef < 0:
+                                ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+                            else:
+                                ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+
+    final_output_file = 'Achat_lego_updated.xlsx'
+    wb.save(final_output_file)
+
+    df.to_excel(final_output_file, index=False)
 
     # Charger le classeur pour appliquer le formatage des couleurs
-    new_wb = openpyxl.load_workbook(output_file)
+    new_wb = openpyxl.load_workbook(final_output_file)
     ws = new_wb.active
 
     # Appliquer le formatage des couleurs en fonction des valeurs de 'Dénéfice potentiel'
