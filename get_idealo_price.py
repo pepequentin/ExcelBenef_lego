@@ -15,6 +15,7 @@ import pyglet.media as media
 import random
 import openpyxl
 from openpyxl.styles import PatternFill, Color
+import xlwings as xw
 
 c3po_ico = 'c3po.ico'
 sound_to_play = "R2D2-hey-you.wav"
@@ -189,27 +190,6 @@ def check_prices(file_path):
 
     final_output_file = 'Achat_lego_updated.xlsx'
     new_wb.save(final_output_file)
-     # Charger le classeur d'entrée
-    input_wb = openpyxl.load_workbook(file_path)
-    input_ws = input_wb.active
-    
-    # Charger le classeur de sortie
-    output_wb = openpyxl.load_workbook(final_output_file)
-    output_ws = output_wb.active
-    
-    for row in input_ws.iter_rows():
-        for cell in row:
-            # Vérifier si la cellule a un arrière-plan différent de blanc
-            if cell.fill.start_color.rgb != 'FFFFFF':
-                # Copier la valeur de la cellule dans le classeur de sortie
-                output_ws.cell(row=cell.row, column=cell.column).value = cell.value
-                
-                # Copier le style de la cellule dans le classeur de sortie
-                new_fill = PatternFill(start_color=Color(rgb=cell.fill.start_color.rgb), end_color=Color(rgb=cell.fill.end_color.rgb), fill_type="solid")
-                output_ws.cell(row=cell.row, column=cell.column).fill = new_fill
-    
-    # Sauvegarder le classeur de sortie avec les cellules colorées
-    output_wb.save(final_output_file)
     print("Données mises à jour et sauvegardées dans", final_output_file)
 
 ##
