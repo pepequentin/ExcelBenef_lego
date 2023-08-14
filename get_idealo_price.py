@@ -421,16 +421,16 @@ def scrape_german(url):
 
 if __name__ == "__main__":
     # Utilisation du script avec le fichier 'Achat_lego.xlsx'
-    # check_prices('Achat_lego.xlsx')
-    # print()
-    # print()
+    check_prices('Achat_lego.xlsx')
+    print()
+    print()
     # Boucle pour appeler la fonction scrape_idealo() toutes les 2 minutes
-    while True:
-        base_url = "https://spiel-und-modellbau.com/?suche=lego+star+wars&seite="
-        for i in range(1, 3):  # Boucle de 1 à 8 inclus
-            url_to_scrape = base_url + str(i)
-            scrape_german(url_to_scrape)
-        scrape_idealo("https://www.idealo.fr/cat/9552F774905oE0oJ4/lego.html")
-        # Générer un nombre aléatoire entre 4 et 12 (exclus) pour time.sleep()
-        random_sleep_time = random.randrange(20, 60)
-        time.sleep(random_sleep_time)
+    # while True:
+    #     base_url = "https://spiel-und-modellbau.com/?suche=lego+star+wars&seite="
+    #     for i in range(1, 3):  # Boucle de 1 à 8 inclus
+    #         url_to_scrape = base_url + str(i)
+    #         scrape_german(url_to_scrape)
+    #     scrape_idealo("https://www.idealo.fr/cat/9552F774905oE0oJ4/lego.html")
+    #     # Générer un nombre aléatoire entre 4 et 12 (exclus) pour time.sleep()
+    #     random_sleep_time = random.randrange(20, 60)
+    #     time.sleep(random_sleep_time)
