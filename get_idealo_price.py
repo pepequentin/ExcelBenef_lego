@@ -13,6 +13,8 @@ import time
 import pyglet
 import pyglet.media as media
 import random
+import openpyxl
+from openpyxl.styles import PatternFill, Color
 
 c3po_ico = 'c3po.ico'
 sound_to_play = "R2D2-hey-you.wav"
@@ -126,72 +128,89 @@ def set_cell_color(ws, row, column, color):
 ##
 def check_prices(file_path):
     df = pd.read_excel(file_path)
+    wb = openpyxl.load_workbook(file_path)
+    new_wb = openpyxl.Workbook()  # Créer un nouveau classeur
+
+    # Copier les styles de chaque cellule du classeur original dans le nouveau classeur
+    for sheet_name in wb.sheetnames:
+        new_sheet = new_wb.create_sheet(title=sheet_name)
+        old_sheet = wb[sheet_name]
+        for row in old_sheet.iter_rows(min_row=1, max_row=old_sheet.max_row, min_col=1, max_col=old_sheet.max_column):
+            for cell in row:
+                new_cell = new_sheet[cell.coordinate]
+                new_cell.value = cell.value
+                if cell.has_style:
+                    new_cell._style = cell._style  # Copier le style de la cellule
+
     for index, row in df.iterrows():
         lien = row[1]
         prix_achat = row[6]
         nb_exemplaires = row[12]
 
         if pd.notna(lien) and isinstance(lien, str) and pd.notna(prix_achat) and nb_exemplaires > 0:
-            # En-tête User-Agent
             user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
-            # En-têtes de la requête
-            headers = {
-                'User-Agent': user_agent
-            }
-            # Faire une requête GET en utilisant le proxy et l'en-tête User-Agent
+            headers = {'User-Agent': user_agent}
             response = requests.get(lien, headers=headers)
-            # Get HTML source code
             html_source_code = response.text
-            # Parsing HTML
             soup = BeautifulSoup(html_source_code, "html.parser")
-            # Trouver la balise contenant le prix
             html_span = soup.find_all('span', {'class': 'oopStage-priceRangePrice'})
-            # Utiliser une expression régulière pour extraire le prix
             prix_pattern = re.compile(r'\d+,\d+')
-            # Calcul du prix d'achat par exemplaire
             prix_achat_par_exemplaire = prix_achat / nb_exemplaires
             for span in html_span:
                 prix_trouve = prix_pattern.search(span.text)
                 if prix_trouve:
                     prix = float(prix_trouve.group().replace(",", "."))
-                    # Comparer le prix trouvé avec le prix d'achat
                     if prix:
-                        # Comparer le prix trouvé avec le prix d'achat
                         if prix_achat != 0:
                             pourcentage_benef = ((prix - prix_achat_par_exemplaire) / prix_achat_par_exemplaire) * 100
                         else:
                             pourcentage_benef = ((prix - prix_achat_par_exemplaire) / 1) * 100
 
-                        # Stocker les valeurs dans le DataFrame avec le symbole '%'
                         df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
                         df.at[index, 'Dénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
 
-    # Sauvegarder le DataFrame mis à jour dans un nouveau fichier Excel
     output_file = 'Achat_lego_temp.xlsx'
     df.to_excel(output_file, index=False)
 
     # Charger le classeur pour appliquer le formatage des couleurs
-    wb = load_workbook(output_file)
-    ws = wb.active
+    new_wb = openpyxl.load_workbook(output_file)
+    ws = new_wb.active
 
     # Appliquer le formatage des couleurs en fonction des valeurs de 'Dénéfice potentiel'
     for index, row in df.iterrows():
-        if row['Dénéfice potentiel'] != nan:
-            pourcentage_benef = row['Dénéfice potentiel']
-            if pd.notna(pourcentage_benef) and isinstance(pourcentage_benef, str):  # Vérifier si c'est une chaîne et non NaN
-                pourcentage_benef = float(pourcentage_benef[:-1])  # Supprimer le symbole '%' et convertir en float
-                if pourcentage_benef > 0:
-                    set_cell_color(ws, index + 2, 11, '00FF00')  # Vert
-                elif pourcentage_benef < 0:
-                    set_cell_color(ws, index + 2, 11, 'FF0000')  # Rouge
-                else:
-                    set_cell_color(ws, index + 2, 11, 'C0C0C0')  # Gris
+        if pd.notna(row['Dénéfice potentiel']):
+            pourcentage_benef = float(row['Dénéfice potentiel'][:-1])
+            if pourcentage_benef > 0:
+                ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+            elif pourcentage_benef < 0:
+                ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+            else:
+                ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
 
-    # Sauvegarder le fichier Excel final avec le formatage des couleurs
     final_output_file = 'Achat_lego_updated.xlsx'
-    wb.save(final_output_file)
+    new_wb.save(final_output_file)
+     # Charger le classeur d'entrée
+    input_wb = openpyxl.load_workbook(file_path)
+    input_ws = input_wb.active
+    
+    # Charger le classeur de sortie
+    output_wb = openpyxl.load_workbook(final_output_file)
+    output_ws = output_wb.active
+    
+    for row in input_ws.iter_rows():
+        for cell in row:
+            # Vérifier si la cellule a un arrière-plan différent de blanc
+            if cell.fill.start_color.rgb != 'FFFFFF':
+                # Copier la valeur de la cellule dans le classeur de sortie
+                output_ws.cell(row=cell.row, column=cell.column).value = cell.value
+                
+                # Copier le style de la cellule dans le classeur de sortie
+                new_fill = PatternFill(start_color=Color(rgb=cell.fill.start_color.rgb), end_color=Color(rgb=cell.fill.end_color.rgb), fill_type="solid")
+                output_ws.cell(row=cell.row, column=cell.column).fill = new_fill
+    
+    # Sauvegarder le classeur de sortie avec les cellules colorées
+    output_wb.save(final_output_file)
     print("Données mises à jour et sauvegardées dans", final_output_file)
-
 
 ##
 #   Fonction principale pour récupérer les informations depuis la page web
