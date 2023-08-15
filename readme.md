@@ -14,7 +14,7 @@ Le **Bot Idéalo** est un programme conçu pour automatiser le suivi des prix de
 
 ## Utilisation
 
-1. Assurez-vous d'avoir toutes les dépendances nécessaires installées. Vous pouvez installer les dépendances en exécutant `pip install -r module_to_install.md`.
+1. Assurez-vous d'avoir toutes les dépendances nécessaires installées. Vous pouvez installer les dépendances en exécutant `pip install -r requirements.txt`.
 
 2. Placez les liens vers les ensembles LEGO, les prix d'achat initiaux et les quantités dans un fichier Excel nommé `Achat_lego.xlsx`.
 
