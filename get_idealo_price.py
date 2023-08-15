@@ -254,18 +254,46 @@ def check_prices(file_path):
 
     # Calculer le coût total
     cout_total = df['Prix d\'achat'].sum()
-    ws.append(["Cout total", None, cout_total])
-
+    ws.append([])
+    ws.append([None, None, "Cout total", cout_total])
 
     # Calculer la vente total
-    ws.append(["Vente total", None, vente_total])
+    ws.append([None, None, "Vente total", vente_total])
 
     # Calculer le potentiel bénéficiaire
-    ws.append(["Potentiel benef", None, vente_total - cout_total])
+    ws.append([None, None, "Potentiel benef", vente_total - cout_total])
 
 
     final_output_file = 'Achat_lego_updated.xlsx'
     new_wb.save(final_output_file)
+
+    # Ouvrir les fichiers Excel
+    wb1 = openpyxl.load_workbook(file_path)
+    wb2 = openpyxl.load_workbook('Achat_lego_updated.xlsx')
+
+    # Sélectionner les feuilles actives des deux fichiers
+    ws1 = wb1.active
+    ws2 = wb2.active
+
+    # Spécifier les colonnes à copier
+    col_to_copy = 'H'
+
+    for row_num, (row1, row2) in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, values_only=True)), start=2):
+        color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
+        ws2[f'{col_to_copy}{row_num}'].fill = openpyxl.styles.PatternFill(start_color=color1, end_color=color1, fill_type="solid")
+   
+    col_to_copy = 'P'
+
+    for row_num, (row1, row2) in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, max_row=4, values_only=True)), start=2):
+        color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
+        ws2[f'{col_to_copy}{row_num}'].fill = openpyxl.styles.PatternFill(start_color=color1, end_color=color1, fill_type="solid")
+
+    # Copier la largeur de colonne du fichier1 sur le fichier2
+    for column in ws1.column_dimensions:
+        ws2.column_dimensions[column].width = ws1.column_dimensions[column].width
+
+    # Sauvegarder les modifications dans le fichier2
+    wb2.save('Achat_lego_updated.xlsx')
     print("Données mises à jour et sauvegardées dans", final_output_file)
 
 ##
