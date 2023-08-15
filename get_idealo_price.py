@@ -282,7 +282,7 @@ def check_prices(file_path):
         color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
         ws2[f'{col_to_copy}{row_num}'].fill = openpyxl.styles.PatternFill(start_color=color1, end_color=color1, fill_type="solid")
    
-    col_to_copy = 'P'
+    col_to_copy = 'Q'
 
     for row_num, (row1, row2) in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, max_row=4, values_only=True)), start=2):
         color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
