@@ -16,6 +16,7 @@ import random
 import openpyxl
 from openpyxl.styles import PatternFill, Color
 import xlwings as xw
+from tqdm import tqdm
 
 c3po_ico = 'c3po.ico'
 sound_to_play = "R2D2-hey-you.wav"
@@ -132,6 +133,11 @@ def check_prices(file_path):
     wb = openpyxl.load_workbook(file_path)
     ws = wb.active
     vente_total = 0
+    num_rows = len(df)
+
+    # Créez une instance tqdm
+    progress_bar = tqdm(total=num_rows, desc="Processing", unit="rows")
+
     for index, row in df.iterrows():
         lien = row[1]
         prix_achat = row[6]
@@ -149,6 +155,7 @@ def check_prices(file_path):
             html_span_for_no_news = pattern.findall(html_source_code)
             prix_pattern = re.compile(r'\d+,\d+')
             prix_achat_par_exemplaire = prix_achat / nb_exemplaires
+
             # Condition pour les lego qui non pas de prix idealo
             if not html_span:
                 prix_trouve = row[8]
@@ -232,7 +239,15 @@ def check_prices(file_path):
                                         ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
                                     else:
                                         ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+            
+            # Mettez à jour la barre de progression
+            progress_bar.update(1)
 
+    # Mettez à jour la barre de progression
+    progress_bar.update(2)
+    # Fermez la barre de progression
+    progress_bar.close()
+    
     final_output_file = 'Achat_lego_updated.xlsx'
     wb.save(final_output_file)
     df.to_excel(final_output_file, index=False)

@@ -9,6 +9,7 @@ pip install pydub
 pip install pyget
 pip install requests
 pip install xlwings
+pip install tqdm
 
 py -m pip install pandas
 py -m pip install bs4
@@ -21,3 +22,6 @@ py -m pip install pydub
 py -m pip install pyglet
 py -m pip install requests
 py -m pip install xlwings
+py -m pip install tqdm
+
+pip freeze > requirements.txt
