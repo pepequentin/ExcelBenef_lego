@@ -245,6 +245,7 @@ def check_prices(file_path):
 
     # Mettez à jour la barre de progression
     progress_bar.update(2)
+
     # Fermez la barre de progression
     progress_bar.close()
     
