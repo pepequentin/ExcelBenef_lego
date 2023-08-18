@@ -34,4 +34,5 @@ Le **Bot Idéalo** est un programme conçu pour automatiser le suivi des prix de
     3.  Il est possible que le logi soit assez rare pour qu'il n'apparaisse quand état d'occasion, donc on doit prendre le prix ailleur `à def`. ✅
     4.  Garder les couleurs de l'input file sur la colonne `Stoké` ✅
     5.  Bot discord pour les notif de nouvelle annonce vinted ❌
-
+ 
+![image](https://github.com/pepequentin/bot-idealo/assets/47141399/f1fc90be-2552-4895-b48f-098c2cc07975)
