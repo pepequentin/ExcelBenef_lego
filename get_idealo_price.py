@@ -8,7 +8,7 @@ from datetime import date, timedelta
 import openpyxl
 from openpyxl.styles import PatternFill
 from tqdm import tqdm
-
+import math
 
 ##
 #   Utilisation du script avec le fichier 'Achat_lego.xlsx'
@@ -145,13 +145,17 @@ def check_prices(file_path):
     # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
     for index, row in df.iterrows():
         if pd.notna(row['Bénéfice potentiel']):
-            pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
-            if pourcentage_benef > 0:
-                ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
-            elif pourcentage_benef < 0:
-                ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+            pourcentage_benef = row['Bénéfice potentiel']
+            if not pourcentage_benef:
+                pourcentage_benef = 0.0  # Vous pouvez assigner la valeur que vous voulez pour le cas "na"
             else:
-                ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+                pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
+                if pourcentage_benef > 0:
+                    ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+                elif pourcentage_benef < 0:
+                    ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+                else:
+                    ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
 
     # Calculer le coût total
     cout_total = df['Prix d\'achat'].sum()
