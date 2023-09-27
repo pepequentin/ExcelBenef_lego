@@ -124,7 +124,7 @@ def check_prices(file_path):
                                         ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
                                     else:
                                         ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
-            
+
             # Mettez à jour la barre de progression
             progress_bar.update(1)
 
@@ -133,7 +133,7 @@ def check_prices(file_path):
 
     # Fermez la barre de progression
     progress_bar.close()
-    
+
     final_output_file = 'Achat_lego_updated.xlsx'
     wb.save(final_output_file)
     df.to_excel(final_output_file, index=False)
@@ -146,7 +146,7 @@ def check_prices(file_path):
     for index, row in df.iterrows():
         if pd.notna(row['Bénéfice potentiel']):
             pourcentage_benef = row['Bénéfice potentiel']
-            if not pourcentage_benef:
+            if pd.isna(pourcentage_benef) or not pourcentage_benef:
                 pourcentage_benef = 0.0  # Vous pouvez assigner la valeur que vous voulez pour le cas "na"
             else:
                 pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
@@ -186,7 +186,7 @@ def check_prices(file_path):
     for row_num, (row1, row2) in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, values_only=True)), start=2):
         color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
         ws2[f'{col_to_copy}{row_num}'].fill = openpyxl.styles.PatternFill(start_color=color1, end_color=color1, fill_type="solid")
-   
+
     col_to_copy = 'R'
 
     for row_num, (row1, row2) in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, max_row=5, values_only=True)), start=2):
