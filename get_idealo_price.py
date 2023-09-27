@@ -124,9 +124,35 @@ def check_prices(file_path):
                                         ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
                                     else:
                                         ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+        else:
+            prix_trouve = row[8]
+            if prix_trouve:
+                prix = prix_trouve
+                if prix:
+                    if prix_achat != 0:
+                        pourcentage_benef = ((prix - prix_achat_par_exemplaire) / prix_achat_par_exemplaire) * 100
+                    else:
+                        pourcentage_benef = ((prix - prix_achat_par_exemplaire) / 1) * 100
 
-            # Mettez à jour la barre de progression
-            progress_bar.update(1)
+
+                    # Prix mul by the number of product in a temp var
+                    tmp_price = prix * nb_exemplaires
+                    vente_total += tmp_price
+                    df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
+                    df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
+
+                    # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
+                    if pd.notna(row['Bénéfice potentiel']):
+                        pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
+                        if pourcentage_benef > 0:
+                            ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+                        elif pourcentage_benef < 0:
+                            ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+                        else:
+                            ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+
+        # Mettez à jour la barre de progression
+        progress_bar.update(1)
 
     # Mettez à jour la barre de progression
     progress_bar.update(2)
@@ -144,7 +170,7 @@ def check_prices(file_path):
 
     # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
     for index, row in df.iterrows():
-        if pd.notna(row['Bénéfice potentiel']):
+        if  pd.notna(row['Bénéfice potentiel']):
             pourcentage_benef = row['Bénéfice potentiel']
             if pd.isna(pourcentage_benef) or not pourcentage_benef:
                 pourcentage_benef = 0.0  # Vous pouvez assigner la valeur que vous voulez pour le cas "na"
@@ -204,4 +230,7 @@ def check_prices(file_path):
 
 if __name__ == "__main__":
     # Utilisation du script avec le fichier 'Achat_lego.xlsx'
+    # row={}
+    # row['Bénéfice potentiel'] = ['o']
+    # print(row['Bénéfice potentiel'][:-2])
     check_prices('../excel_idealo/Achat_lego.xlsx')
