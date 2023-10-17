@@ -27,7 +27,8 @@ def check_prices(file_path):
         lien = row[1]
         prix_achat = row[6]
         nb_exemplaires = row[12]
-
+        print(f" prix_achat: {prix_achat}")
+        print(f" nb_exemplaires: {nb_exemplaires}")
         if pd.notna(lien) and isinstance(lien, str) and pd.notna(prix_achat) and nb_exemplaires > 0:
             user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
             headers = {'User-Agent': user_agent}
@@ -44,37 +45,38 @@ def check_prices(file_path):
             # Condition pour les lego qui non pas de prix idealo
             if not html_span:
                 prix_trouve = row[8]
-                if prix_trouve:
-                    prix = prix_trouve
-                    if prix:
-                        if prix_achat != 0:
-                            pourcentage_benef = ((prix - prix_achat_par_exemplaire) / prix_achat_par_exemplaire) * 100
+                if pd.notna(prix_trouve):
+                    if prix_achat != 0:
+                        pourcentage_benef = ((prix_trouve - prix_achat_par_exemplaire) / prix_achat_par_exemplaire) * 100
+                    else:
+                        pourcentage_benef = ((prix_trouve - prix_achat_par_exemplaire) / 1) * 100
+
+
+                    # Prix mul by the number of product in a temp var
+                    tmp_price = prix_trouve * nb_exemplaires
+                    print("59")
+                    print(f"prix: {prix_trouve}")
+                    print(f"tmp_price: {tmp_price}")
+                    vente_total += tmp_price
+                    df.at[index, 'Prix actuel idéalo'] = f"{prix_trouve:.2f}"
+                    df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
+
+                    # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
+                    if pd.notna(row['Bénéfice potentiel']):
+                        pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
+                        if pourcentage_benef > 0:
+                            ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+                        elif pourcentage_benef < 0:
+                            ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
                         else:
-                            pourcentage_benef = ((prix - prix_achat_par_exemplaire) / 1) * 100
-
-
-                        # Prix mul by the number of product in a temp var
-                        tmp_price = prix * nb_exemplaires
-                        vente_total += tmp_price
-                        df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
-                        df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
-
-                        # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
-                        if pd.notna(row['Bénéfice potentiel']):
-                            pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
-                            if pourcentage_benef > 0:
-                                ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
-                            elif pourcentage_benef < 0:
-                                ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
-                            else:
-                                ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+                            ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
             else:
                 for span in html_span:
                     if html_span_for_no_news:
                         prix_trouve = prix_pattern.search(span.text)
-                        if prix_trouve:
+                        if pd.notna(prix_trouve):
                             prix = float(prix_trouve.group().replace(",", "."))
-                            if prix:
+                            if pd.notna(prix):
                                 prix *= 4
                                 if prix_achat != 0:
                                     pourcentage_benef = ((prix - prix_achat_par_exemplaire) / prix_achat_par_exemplaire) * 100
@@ -84,6 +86,9 @@ def check_prices(file_path):
 
                                 # Prix mul by the number of product in a temp var
                                 tmp_price = prix * nb_exemplaires
+                                print("90")
+                                print(f"prix: {prix}")
+                                print(f"tmp_price: {tmp_price}")
                                 vente_total += tmp_price
                                 df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
                                 df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
@@ -102,7 +107,7 @@ def check_prices(file_path):
                         prix_trouve = prix_pattern.search(span.text)
                         if prix_trouve:
                             prix = float(prix_trouve.group().replace(",", "."))
-                            if prix:
+                            if pd.notna(prix):
                                 if prix_achat != 0:
                                     pourcentage_benef = ((prix - prix_achat_par_exemplaire) / prix_achat_par_exemplaire) * 100
                                 else:
@@ -111,6 +116,9 @@ def check_prices(file_path):
 
                                 # Prix mul by the number of product in a temp var
                                 tmp_price = prix * nb_exemplaires
+                                print("119")
+                                print(f"prix: {prix}")
+                                print(f"tmp_price: {tmp_price}")
                                 vente_total += tmp_price
                                 df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
                                 df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
@@ -126,34 +134,34 @@ def check_prices(file_path):
                                         ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
         else:
             prix_trouve = row[8]
-            if prix_trouve:
-                prix = prix_trouve
-                if prix:
-                    if prix_achat != 0:
-                        pourcentage_benef = ((prix - prix_achat_par_exemplaire) / prix_achat_par_exemplaire) * 100
+            if pd.notna(prix_trouve):
+                if prix_achat != 0:
+                    pourcentage_benef = ((prix_trouve - prix_achat_par_exemplaire) / prix_achat_par_exemplaire) * 100
+                else:
+                    pourcentage_benef = ((prix_trouve - prix_achat_par_exemplaire) / 1) * 100
+
+                # Prix mul by the number of product in a temp var
+                tmp_price = prix_trouve * nb_exemplaires
+                print("147")
+                print(f"prix: {prix_trouve}")
+                print(f"tmp_price: {tmp_price}")
+                vente_total += tmp_price
+                df.at[index, 'Prix actuel idéalo'] = f"{prix_trouve:.2f}"
+                df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
+
+                # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
+                if pd.notna(row['Bénéfice potentiel']):
+                    pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
+                    if pourcentage_benef > 0:
+                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+                    elif pourcentage_benef < 0:
+                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
                     else:
-                        pourcentage_benef = ((prix - prix_achat_par_exemplaire) / 1) * 100
-
-
-                    # Prix mul by the number of product in a temp var
-                    tmp_price = prix * nb_exemplaires
-                    vente_total += tmp_price
-                    df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
-                    df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
-
-                    # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
-                    if pd.notna(row['Bénéfice potentiel']):
-                        pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
-                        if pourcentage_benef > 0:
-                            ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
-                        elif pourcentage_benef < 0:
-                            ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
-                        else:
-                            ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
 
         # Mettez à jour la barre de progression
         progress_bar.update(1)
-
+    exit(0)
     # Mettez à jour la barre de progression
     progress_bar.update(2)
 
@@ -183,7 +191,7 @@ def check_prices(file_path):
                         ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
                     else:
                         ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
-                except AttributeError:
+                except:
                     print(f"index: {index} - row: {row['Bénéfice potentiel']}")
 
     # Calculer le coût total
@@ -212,19 +220,27 @@ def check_prices(file_path):
     # Spécifier les colonnes à copier
     col_to_copy = 'H'
 
-    for row_num, (row1, row2) in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, values_only=True)), start=2):
-        color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
-        ws2[f'{col_to_copy}{row_num}'].fill = openpyxl.styles.PatternFill(start_color=color1, end_color=color1, fill_type="solid")
-
+    for row_num in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, values_only=True)), start=2):
+        try:
+            color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
+            ws2[f'{col_to_copy}{row_num}'].fill = openpyxl.styles.PatternFill(start_color=color1, end_color=color1, fill_type="solid")
+        except:
+                print("col to copy: {col_to_copy}")
     col_to_copy = 'R'
 
-    for row_num, (row1, row2) in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, max_row=5, values_only=True)), start=2):
-        color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
-        ws2[f'{col_to_copy}{row_num}'].fill = openpyxl.styles.PatternFill(start_color=color1, end_color=color1, fill_type="solid")
+    for row_num in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, max_row=5, values_only=True)), start=2):
+        try:
+            color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
+            ws2[f'{col_to_copy}{row_num}'].fill = openpyxl.styles.PatternFill(start_color=color1, end_color=color1, fill_type="solid")
+        except:
+                continue
 
     # Copier la largeur de colonne du fichier1 sur le fichier2
     for column in ws1.column_dimensions:
-        ws2.column_dimensions[column].width = ws1.column_dimensions[column].width
+        try:
+            ws2.column_dimensions[column].width = ws1.column_dimensions[column].width
+        except:
+                continue
 
     # Sauvegarder les modifications dans le fichier2
     wb2.save('Achat_lego_updated.xlsx')
