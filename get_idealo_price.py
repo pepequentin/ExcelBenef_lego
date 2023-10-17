@@ -10,10 +10,12 @@ from openpyxl.styles import PatternFill
 from tqdm import tqdm
 import math
 
+
+
 ##
 #   Utilisation du script avec le fichier 'Achat_lego.xlsx'
 ##
-def check_prices(file_path):
+def check_prices(file_path, debug_active):
     df = pd.read_excel(file_path)
     wb = openpyxl.load_workbook(file_path)
     ws = wb.active
@@ -27,8 +29,9 @@ def check_prices(file_path):
         lien = row[1]
         prix_achat = row[6]
         nb_exemplaires = row[12]
-        print(f" prix_achat: {prix_achat}")
-        print(f" nb_exemplaires: {nb_exemplaires}")
+        if "yes" in debug_active:
+            print(f" prix_achat: {prix_achat}")
+            print(f" nb_exemplaires: {nb_exemplaires}")
         if pd.notna(lien) and isinstance(lien, str) and pd.notna(prix_achat) and nb_exemplaires > 0:
             user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
             headers = {'User-Agent': user_agent}
@@ -54,9 +57,10 @@ def check_prices(file_path):
 
                     # Prix mul by the number of product in a temp var
                     tmp_price = prix_trouve * nb_exemplaires
-                    print("59")
-                    print(f"prix: {prix_trouve}")
-                    print(f"tmp_price: {tmp_price}")
+                    if "yes" in debug_active:
+                        print("59")
+                        print(f"prix: {prix_trouve}")
+                        print(f"tmp_price: {tmp_price}")
                     vente_total += tmp_price
                     df.at[index, 'Prix actuel idéalo'] = f"{prix_trouve:.2f}"
                     df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
@@ -86,9 +90,10 @@ def check_prices(file_path):
 
                                 # Prix mul by the number of product in a temp var
                                 tmp_price = prix * nb_exemplaires
-                                print("90")
-                                print(f"prix: {prix}")
-                                print(f"tmp_price: {tmp_price}")
+                                if "yes" in debug_active:
+                                    print("90")
+                                    print(f"prix: {prix}")
+                                    print(f"tmp_price: {tmp_price}")
                                 vente_total += tmp_price
                                 df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
                                 df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
@@ -116,9 +121,10 @@ def check_prices(file_path):
 
                                 # Prix mul by the number of product in a temp var
                                 tmp_price = prix * nb_exemplaires
-                                print("119")
-                                print(f"prix: {prix}")
-                                print(f"tmp_price: {tmp_price}")
+                                if "yes" in debug_active:
+                                    print("119")
+                                    print(f"prix: {prix}")
+                                    print(f"tmp_price: {tmp_price}")
                                 vente_total += tmp_price
                                 df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
                                 df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
@@ -142,9 +148,10 @@ def check_prices(file_path):
 
                 # Prix mul by the number of product in a temp var
                 tmp_price = prix_trouve * nb_exemplaires
-                print("147")
-                print(f"prix: {prix_trouve}")
-                print(f"tmp_price: {tmp_price}")
+                if "yes" in debug_active:
+                    print("147")
+                    print(f"prix: {prix_trouve}")
+                    print(f"tmp_price: {tmp_price}")
                 vente_total += tmp_price
                 df.at[index, 'Prix actuel idéalo'] = f"{prix_trouve:.2f}"
                 df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
@@ -161,7 +168,6 @@ def check_prices(file_path):
 
         # Mettez à jour la barre de progression
         progress_bar.update(1)
-    exit(0)
     # Mettez à jour la barre de progression
     progress_bar.update(2)
 
@@ -249,7 +255,4 @@ def check_prices(file_path):
 
 if __name__ == "__main__":
     # Utilisation du script avec le fichier 'Achat_lego.xlsx'
-    # row={}
-    # row['Bénéfice potentiel'] = ['o']
-    # print(row['Bénéfice potentiel'][:-2])
-    check_prices('../excel_idealo/Achat_lego.xlsx')
+    check_prices('../excel_idealo/Achat_lego.xlsx', "no")
