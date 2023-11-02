@@ -64,6 +64,16 @@ def check_prices(file_path, debug_active):
                     vente_total += tmp_price
                     df.at[index, 'Prix actuel idéalo'] = f"{prix_trouve:.2f}"
                     df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
+
+                    # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
+                    if pd.notna(row['Bénéfice potentiel']):
+                        pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
+                        if pourcentage_benef > 0:
+                            ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+                        elif pourcentage_benef < 0:
+                            ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+                        else:
+                            ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
             else:
                 for span in html_span:
                     if html_span_for_no_news:
@@ -87,6 +97,17 @@ def check_prices(file_path, debug_active):
                                 vente_total += tmp_price
                                 df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
                                 df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
+
+                                # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
+                                if pd.notna(row['Bénéfice potentiel']):
+                                    pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
+                                    if pourcentage_benef > 0:
+                                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+                                    elif pourcentage_benef < 0:
+                                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+                                    else:
+                                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+
                     else:
                         prix_trouve = prix_pattern.search(span.text)
                         if prix_trouve:
@@ -107,6 +128,16 @@ def check_prices(file_path, debug_active):
                                 vente_total += tmp_price
                                 df.at[index, 'Prix actuel idéalo'] = f"{prix:.2f}"
                                 df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
+
+                                # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
+                                if pd.notna(row['Bénéfice potentiel']):
+                                    pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
+                                    if pourcentage_benef > 0:
+                                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+                                    elif pourcentage_benef < 0:
+                                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+                                    else:
+                                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
         else:
             prix_trouve = row[8]
             if pd.notna(prix_trouve):
@@ -125,6 +156,16 @@ def check_prices(file_path, debug_active):
                 df.at[index, 'Prix actuel idéalo'] = f"{prix_trouve:.2f}"
                 df.at[index, 'Bénéfice potentiel'] = f"{pourcentage_benef * nb_exemplaires:.2f}"
 
+                # Appliquer le formatage des couleurs en fonction des valeurs de 'Bénéfice potentiel'
+                if pd.notna(row['Bénéfice potentiel']):
+                    pourcentage_benef = float(row['Bénéfice potentiel'][:-1])
+                    if pourcentage_benef > 0:
+                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+                    elif pourcentage_benef < 0:
+                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+                    else:
+                        ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+
         # Mettez à jour la barre de progression
         progress_bar.update(1)
     # Mettez à jour la barre de progression
@@ -133,10 +174,9 @@ def check_prices(file_path, debug_active):
     # Fermez la barre de progression
     progress_bar.close()
 
-    final_output_file = 'Achat_lego_temp.xlsx'
+    final_output_file = 'Achat_lego_updated.xlsx'
     wb.save(final_output_file)
     df.to_excel(final_output_file, index=False)
-
     # Charger le classeur pour appliquer le formatage des couleurs
     new_wb = openpyxl.load_workbook(final_output_file)
     ws = new_wb.active
@@ -158,7 +198,6 @@ def check_prices(file_path, debug_active):
                         ws.cell(row=index + 2, column=11).fill = openpyxl.styles.PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
                 except:
                     print(f"index: {index} - row: {row['Bénéfice potentiel']}")
-
     # Calculer le coût total
     cout_total = df['Prix d\'achat'].sum()
     ws.append([])
@@ -171,12 +210,12 @@ def check_prices(file_path, debug_active):
     ws.append([None, None, "Potentiel benef", vente_total - cout_total])
 
 
-    final_output_file = 'Achat_lego_temp.xlsx'
+    final_output_file = 'Achat_lego_updated.xlsx'
     new_wb.save(final_output_file)
 
     # Ouvrir les fichiers Excel
     wb1 = openpyxl.load_workbook(file_path)
-    wb2 = openpyxl.load_workbook('Achat_lego_temp.xlsx')
+    wb2 = openpyxl.load_workbook('Achat_lego_updated.xlsx')
 
     # Sélectionner les feuilles actives des deux fichiers
     ws1 = wb1.active
@@ -185,27 +224,20 @@ def check_prices(file_path, debug_active):
     # Spécifier les colonnes à copier
     col_to_copy = 'H'
 
-    for row_num in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, values_only=True)), start=2):
-        try:
-            color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
-            ws2[f'{col_to_copy}{row_num}'].fill = openpyxl.styles.PatternFill(start_color=color1, end_color=color1, fill_type="solid")
-        except:
-                pass
+
+    for row_num, (row1, row2) in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, values_only=True)), start=2):
+        color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
+        ws2[f'{col_to_copy}{row_num}'].fill = openpyxl.styles.PatternFill(start_color=color1, end_color=color1, fill_type="solid")
+   
     col_to_copy = 'R'
 
-    for row_num in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, max_row=5, values_only=True)), start=2):
-        try:
-            color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
-            ws2[f'{col_to_copy}{row_num}'].fill = openpyxl.styles.PatternFill(start_color=color1, end_color=color1, fill_type="solid")
-        except:
-                pass
+    for row_num, (row1, row2) in enumerate(zip(ws1.iter_rows(min_row=2, values_only=True), ws2.iter_rows(min_row=2, max_row=5, values_only=True)), start=2):
+        color1 = ws1[f'{col_to_copy}{row_num}'].fill.start_color
+        ws2[f'{col_to_copy}{row_num}'].fill = openpyxl.styles.PatternFill(start_color=color1, end_color=color1, fill_type="solid")
 
     # Copier la largeur de colonne du fichier1 sur le fichier2
     for column in ws1.column_dimensions:
-        try:
-            ws2.column_dimensions[column].width = ws1.column_dimensions[column].width
-        except:
-                pass
+        ws2.column_dimensions[column].width = ws1.column_dimensions[column].width
 
     # Sauvegarder les modifications dans le fichier2
     wb2.save('Achat_lego_updated.xlsx')
